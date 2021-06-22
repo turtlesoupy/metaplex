@@ -40,6 +40,7 @@ import { AuctionManagerStatus } from '../../models/metaplex';
 import './index.less';
 import { useBillingInfo } from '../../views/auction/billing';
 import { WalletAdapter } from '@solana/wallet-base';
+import { useEffect } from 'react';
 interface NotificationCard {
   id: string;
   title: string;
