@@ -1,4 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
+import { findProgramAddress } from '../utils';
+import { TokenSwapLayout, TokenSwapLayoutV1 } from '../models/tokenSwap';
 
 export const STORE_OWNER_ADDRESS = new PublicKey(
   'kickNLAj7N8kfEtXLuhpYJLGwZjJahuz7nr9tjKgn8e',
@@ -76,7 +78,7 @@ const getStoreID = async () => {
     return undefined;
   }
 
-  const programs = await PublicKey.findProgramAddress(
+  const programs = await findProgramAddress(
     [
       Buffer.from('metaplex'),
       METAPLEX_ID.toBuffer(),
