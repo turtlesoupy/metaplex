@@ -126,6 +126,7 @@ async function getPersonalEscrowAta(
     )
   )[0];
 }
+
 export function useCollapseWrappedSol({
   connection,
   wallet,
@@ -354,32 +355,34 @@ export function Notifications() {
     });
   });
 
-  possiblyBrokenAuctionManagerSetups.forEach(v => {
-    notifications.push({
-      id: v.auctionManager.pubkey.toBase58(),
-      title: 'You have items locked in a defective auction!',
-      description: (
-        <span>
-          During an auction creation process that probably had some issues, you
-          lost an item. Reclaim it now.
-        </span>
-      ),
-      action: async () => {
-        try {
-          await decommAuctionManagerAndReturnPrizes(
-            connection,
-            wallet,
-            v,
-            accountByMint,
-          );
-        } catch (e) {
-          console.error(e);
-          return false;
-        }
-        return true;
-      },
+  possiblyBrokenAuctionManagerSetups
+    .filter(v => v.auctionManager.info.authority.toBase58() == walletPubkey)
+    .forEach(v => {
+      notifications.push({
+        id: v.auctionManager.pubkey.toBase58(),
+        title: 'You have items locked in a defective auction!',
+        description: (
+          <span>
+            During an auction creation process that probably had some issues,
+            you lost an item. Reclaim it now.
+          </span>
+        ),
+        action: async () => {
+          try {
+            await decommAuctionManagerAndReturnPrizes(
+              connection,
+              wallet,
+              v,
+              accountByMint,
+            );
+          } catch (e) {
+            console.error(e);
+            return false;
+          }
+          return true;
+        },
+      });
     });
-  });
 
   const metaNeedsApproving = useMemo(
     () =>
