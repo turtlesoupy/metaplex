@@ -1368,13 +1368,13 @@ const TierTableStep = (props: {
                     if (items[0]) {
                       const existing = props.attributes.items.find(
                         it =>
-                          it.metadata.pubkey.toBase58() ==
+                          it.metadata.pubkey.toBase58() ===
                           items[0].metadata.pubkey.toBase58(),
                       );
                       if (!existing) newItems.push(items[0]);
                       const index = newItems.findIndex(
                         it =>
-                          it.metadata.pubkey.toBase58() ==
+                          it.metadata.pubkey.toBase58() ===
                           items[0].metadata.pubkey.toBase58(),
                       );
 
@@ -1398,7 +1398,7 @@ const TierTableStep = (props: {
                       const othersWithSameItem = newTiers.find(c =>
                         c.items.find(
                           it =>
-                            it.safetyDepositBoxIndex ==
+                            it.safetyDepositBoxIndex ===
                             (i as WinningConfigItem).safetyDepositBoxIndex,
                         ),
                       );
@@ -1466,7 +1466,7 @@ const TierTableStep = (props: {
                       </Option>
                     </Select>
 
-                    {(i as WinningConfigItem).winningConfigType ==
+                    {(i as WinningConfigItem).winningConfigType ===
                       WinningConfigType.Printing && (
                       <label className="action-field">
                         <span className="field-title">

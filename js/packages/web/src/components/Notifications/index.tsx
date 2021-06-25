@@ -6,8 +6,6 @@ import {
 } from '@ant-design/icons';
 import {
   programIds,
-  PROGRAM_IDS,
-  TokenAccount,
   useConnection,
   useUserAccounts,
   useWallet,
@@ -18,8 +16,6 @@ import React, { useMemo, useState } from 'react';
 import {
   Connection,
   PublicKey,
-  RpcResponseAndContext,
-  TokenAmount,
 } from '@solana/web3.js';
 import { Link } from 'react-router-dom';
 import { closePersonalEscrow } from '../../actions/closePersonalEscrow';
@@ -31,14 +27,10 @@ import { settle } from '../../actions/settle';
 import { QUOTE_MINT } from '../../constants';
 import { useMeta } from '../../contexts';
 import {
-  AuctionView,
   AuctionViewState,
   useAuctions,
-  useUserBalance,
 } from '../../hooks';
-import { AuctionManagerStatus } from '../../models/metaplex';
 import './index.less';
-import { useBillingInfo } from '../../views/auction/billing';
 import { WalletAdapter } from '@solana/wallet-base';
 import { useEffect } from 'react';
 interface NotificationCard {
@@ -200,7 +192,7 @@ export function useSettlementAuctions({
       const nextBatch = auctionsNeedingSettling
         .filter(
           a =>
-            a.auctionManager.info.authority.toBase58() == walletPubkey &&
+            a.auctionManager.info.authority.toBase58() === walletPubkey &&
             a.auction.info.ended(),
         )
         .sort(
@@ -216,7 +208,7 @@ export function useSettlementAuctions({
             av.auctionManager.info.acceptPayment,
           );
           if (
-            ((balance.value.uiAmount || 0) == 0 &&
+            ((balance.value.uiAmount || 0) === 0 &&
               av.auction.info.bidState.bids
                 .map(b => b.amount.toNumber())
                 .reduce((acc, r) => (acc += r), 0) > 0) ||
@@ -236,7 +228,7 @@ export function useSettlementAuctions({
 
   Object.keys(validDiscoveredEndedAuctions).forEach(auctionViewKey => {
     const auctionView = auctionsNeedingSettling.find(
-      a => a.auctionManager.pubkey.toBase58() == auctionViewKey,
+      a => a.auctionManager.pubkey.toBase58() === auctionViewKey,
     );
     if (!auctionView) return;
     const winners = [...auctionView.auction.info.bidState.bids]
@@ -255,7 +247,7 @@ export function useSettlementAuctions({
       b =>
         winners[b.info.bidderAct.toBase58()] &&
         !b.info.emptied &&
-        b.info.auctionAct.toBase58() == auctionKey,
+        b.info.auctionAct.toBase58() === auctionKey,
     );
     if (bidsToClaim.length || validDiscoveredEndedAuctions[auctionViewKey] > 0)
       notifications.push({
@@ -356,7 +348,7 @@ export function Notifications() {
   });
 
   possiblyBrokenAuctionManagerSetups
-    .filter(v => v.auctionManager.info.authority.toBase58() == walletPubkey)
+    .filter(v => v.auctionManager.info.authority.toBase58() === walletPubkey)
     .forEach(v => {
       notifications.push({
         id: v.auctionManager.pubkey.toBase58(),
