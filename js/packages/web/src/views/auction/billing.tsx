@@ -416,7 +416,7 @@ export const InnerBillingView = ({
             <ArtContent
               pubkey={id}
               className="artwork-image"
-              allowMeshRender
+              allowMeshRender={true}
             />
           </Col>
           <Col span={12}>

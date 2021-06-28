@@ -78,10 +78,8 @@ export const AuctionRenderCard = (props: AuctionCard) => {
           <ArtContent
             className="auction-image no-events"
             preview={false}
-
             pubkey={id}
-
-            allowMeshRender={false}
+            allowMeshRender={true}
           />
         </>
       }
