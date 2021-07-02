@@ -27,7 +27,7 @@ export const PreSaleBanner = ({ auction }: IPreSaleBanner) => {
         <ArtContent
           pubkey={id}
           className="artwork-image"
-          allowMeshRender={false}
+          allowMeshRender={true}
         />
       </Col>
       <Col md={12} className="presale-info">
