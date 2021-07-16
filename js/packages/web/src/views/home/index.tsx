@@ -147,6 +147,7 @@ export const HomeView = () => {
                     tab={<span className="tab-title">Live Auctions</span>}
                     key={LiveAuctionViewState.All}
                   >
+                    <PreSaleBanner auction={heroAuction} />
                     {liveAuctionsView}
                   </TabPane>
                   {auctionsEnded.length > 0 && (
