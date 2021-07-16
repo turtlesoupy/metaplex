@@ -18,19 +18,22 @@ import { WhitelistedCreator } from '../../models/metaplex';
 const { TabPane } = Tabs;
 
 const { Content } = Layout;
-export const HomeView = (props: {
-  expiredOnly?: boolean;
-}) => {
+
+export enum LiveAuctionViewState {
+  All = '0',
+  Participated = '1',
+  Ended = '2',
+};
+
+export const HomeView = () => {
   const auctions = useAuctions(AuctionViewState.Live);
-  let auctionsEnded = useAuctions(AuctionViewState.Ended);
-  if (!props.expiredOnly) {
-    auctionsEnded = [];
-  }
+  const auctionsEnded = useAuctions(AuctionViewState.Ended);
+  const [activeKey, setActiveKey] = useState(LiveAuctionViewState.All);
   const { isLoading, store } = useMeta();
   const [isInitalizingStore, setIsInitalizingStore] = useState(false);
   const connection = useConnection();
   const history = useHistory();
-  const { wallet, connect } = useWallet();
+  const { wallet, connect, connected } = useWallet();
   const breakpointColumnsObj = {
     default: 4,
     1100: 3,
@@ -50,8 +53,15 @@ export const HomeView = (props: {
   );
 
   const liveAuctions = auctions
-  .filter((e) => props.expiredOnly ? e.auction.info.ended() : !e.auction.info.ended()) // TDIM: only show live auctions
+  //.filter((e) => props.expiredOnly ? e.auction.info.ended() : !e.auction.info.ended()) // TDIM: only show live auctions
   .sort((a, b) => a.auction.info.endedAt?.sub(b.auction.info.endedAt || new BN(0)).toNumber() || 0);
+
+  const items =
+    activeKey === LiveAuctionViewState.All
+      ? liveAuctions
+      : activeKey === LiveAuctionViewState.Participated ?
+      liveAuctions.concat(auctionsEnded).filter((m, idx) => m.myBidderMetadata?.info.bidderPubkey.toBase58() == wallet?.publicKey?.toBase58()):
+      auctionsEnded;
 
   const liveAuctionsView = (
     <Masonry
@@ -60,7 +70,7 @@ export const HomeView = (props: {
       columnClassName="my-masonry-grid_column"
     >
       {!isLoading
-        ? liveAuctions.map((m, idx) => {
+        ? items.map((m, idx) => {
               if (m === heroAuction) {
                 return;
               }
@@ -127,29 +137,34 @@ export const HomeView = (props: {
           }}>Init Store</Button>
         </>}
       </>}
-      {!props.expiredOnly && (
-        <PreSaleBanner auction={heroAuction} />
-      )}
       <Layout>
         <Content style={{ display: 'flex', flexWrap: 'wrap' }}>
           <Col style={{ width: '100%', marginTop: 10 }}>
-            <Row>
-              {auctionsEnded.length > 0 && (
-              <Tabs>
-                <TabPane>
-                  <h2>Ended Auctions</h2>
-                  {endedAuctions}
-                </TabPane>
-              </Tabs>
-              )}
-              <br />
-            </Row>
             {liveAuctions.length > 1 && (<Row>
-              <Tabs>
-                <TabPane>
-                  <h2>{props.expiredOnly ? "Expired" : "Live"} Auctions</h2>
-                  {liveAuctionsView}
-                </TabPane>
+              <Tabs activeKey={activeKey}
+                  onTabClick={key => setActiveKey(key as LiveAuctionViewState)}>
+                  <TabPane
+                    tab={<span className="tab-title">Live Auctions</span>}
+                    key={LiveAuctionViewState.All}
+                  >
+                    {liveAuctionsView}
+                  </TabPane>
+                  {auctionsEnded.length > 0 && (
+                  <TabPane
+                    tab={<span className="tab-title">Ended Auctions</span>}
+                    key={LiveAuctionViewState.Ended}
+                  >
+                    {endedAuctions}
+                  </TabPane>
+                  )}
+                  {connected && (
+                    <TabPane
+                      tab={<span className="tab-title">Participated</span>}
+                      key={LiveAuctionViewState.Participated}
+                    >
+                      {liveAuctionsView}
+                    </TabPane>
+                  )}
               </Tabs>
             </Row>)}
           </Col>

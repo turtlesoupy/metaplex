@@ -81,7 +81,7 @@ export function Routes() {
                             path="/auction/:id/billing"
                             component={() => <BillingView />}
                           />
-                          <Route path="/auctions_closed" component={() => <HomeView expiredOnly/>} />
+                          <Route path="/auctions_closed" component={() => <HomeView />} />
                           <Route path="/" component={() => <HomeView />} />
                         </Switch>
                       </AppLayout>
