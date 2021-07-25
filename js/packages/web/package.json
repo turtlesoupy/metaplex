@@ -45,7 +45,7 @@
     "start": "next dev",
     "build": "next build",
     "export": "next export -o ../../build/web && touch ../../build/web/.nojekyll",
-    "start:prod": "next start",
+    "start:prod": "next start -p ${PORT-3000}",
     "test": "jest",
     "deploy:ar": "yarn export && arweave deploy-dir  ../../build/web --key-file ",
     "deploy:gh": "yarn export && gh-pages -d ../../build/web --repo https://github.com/metaplex-foundation/metaplex -t true",

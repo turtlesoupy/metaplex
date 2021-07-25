@@ -44,6 +44,9 @@ COPY --from=build --chown=nextjs:nodejs /app/packages/web/.next ./.next
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages/web/package.json ./package.json
 
+RUN mkdir -p .cache/yarn
+RUN chown nextjs .cache/yarn
+
 USER nextjs
 
 EXPOSE 3000
