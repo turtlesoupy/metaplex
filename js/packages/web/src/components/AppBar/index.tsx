@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import './index.less';
 import { Link } from 'react-router-dom';
 import { Button, Dropdown, Menu } from 'antd';
 import { Notifications } from '../Notifications';
@@ -21,10 +20,25 @@ const UserActions = () => {
   const { whitelistedCreatorsByCreator, store } = useMeta();
   const pubkey = wallet?.publicKey?.toBase58() || '';
 
-  const connection = useConnection();
+  const canCreate = useMemo(() => {
+    return (
+      store &&
+      store.info &&
+      (store.info.public ||
+        whitelistedCreatorsByCreator[pubkey]?.info?.activated)
+    );
+  }, [pubkey, whitelistedCreatorsByCreator, store]);
 
   return (
     <>
+      {/* <Link to={`#`}>
+        <Button className="app-btn">Bids</Button>
+      </Link> */}
+      {canCreate ? (
+        <Link to={`/art/create`}>
+          <Button className="app-btn">Create</Button>
+        </Link>
+      ) : null}
       <Link to={`/auction/create/0`}>
         <Button className="connector" type="primary">
           Sell
@@ -68,7 +82,13 @@ const DefaultActions = ({ vertical = false }: { vertical?: boolean }) => {
         <Button className="app-btn">Ended Auctions</Button>
       </Link>
       <Link to={`/artworks`}>
+<<<<<<< HEAD
         <Button className="app-btn">{connected ? 'My Shoes' : 'Shoes'}</Button>
+=======
+        <Button className="app-btn">
+          {connected ? 'My Items' : 'Artworks'}
+        </Button>
+>>>>>>> upstream/master
       </Link>
       <Link to={`/artists`}>
         <Button className="app-btn">Creators</Button>
@@ -92,18 +112,26 @@ const MetaplexMenu = () => {
             <Menu>
               <Menu.Item>
                 <Link to={`/`}>
+<<<<<<< HEAD
                   <Button className="app-btn">Live Auctions</Button>
                 </Link>
               </Menu.Item>
               <Menu.Item>
                 <Link to={`/auctions_closed`}>
                   <Button className="app-btn">Ended Aucitons</Button>
+=======
+                  <Button className="app-btn">Explore</Button>
+>>>>>>> upstream/master
                 </Link>
               </Menu.Item>
               <Menu.Item>
                 <Link to={`/artworks`}>
                   <Button className="app-btn">
+<<<<<<< HEAD
                     {connected ? 'My Shoes' : 'Shoes'}
+=======
+                    {connected ? 'My Items' : 'Artworks'}
+>>>>>>> upstream/master
                   </Button>
                 </Link>
               </Menu.Item>

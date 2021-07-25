@@ -2,6 +2,7 @@ import { dir } from 'console';
 import React from 'react';
 import ContentLoader from 'react-content-loader';
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { ThreeDots } from '../MyLoader';
 import { TouchableOrbitControls } from './utils';
@@ -93,6 +94,10 @@ export class MeshViewer extends React.Component<
     } else if (this.props.url) {
       meshURL = this.props.url;
     }
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('js/libs/draco/');
+    this.gltfLoader.setDRACOLoader(dracoLoader);
 
     this.gltfLoader.load(
       meshURL,

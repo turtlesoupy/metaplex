@@ -1,17 +1,9 @@
 import { PublicKey } from '@solana/web3.js';
 import { findProgramAddress } from '../utils';
-import { TokenSwapLayout, TokenSwapLayoutV1 } from '../models/tokenSwap';
 
-export const STORE_OWNER_ADDRESS = new PublicKey(
+export const CRYPTOKICKERS_STORE_ID = new PublicKey(
   'kickNLAj7N8kfEtXLuhpYJLGwZjJahuz7nr9tjKgn8e',
 );
-
-/*
-export const STORE_OWNER_ADDRESS = new PublicKey(
-  'bckupPkvbcbG7aEdfCz8PMUcAHrhNxE2z5V5Wz3CdnV',
-);
-*/
-console.debug(`Store owner address: ${STORE_OWNER_ADDRESS?.toBase58()}`);
 
 export const WRAPPED_SOL_MINT = new PublicKey(
   'So11111111111111111111111111111111111111112',
@@ -71,6 +63,15 @@ export const PROGRAM_IDS = [
     name: 'localnet',
   },
 ];
+
+let STORE_OWNER_ADDRESS: PublicKey | undefined;
+
+export const setStoreID = (storeId: any) => {
+  STORE_OWNER_ADDRESS = storeId
+    ? new PublicKey(`${storeId}`)
+    : // DEFAULT STORE FRONT OWNER FOR METAPLEX
+      CRYPTOKICKERS_STORE_ID;
+};
 
 const getStoreID = async () => {
   console.log(`STORE_OWNER_ADDRESS: ${STORE_OWNER_ADDRESS?.toBase58()}`);
