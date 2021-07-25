@@ -68,7 +68,9 @@ export const HomeView = () => {
 
   switch (activeKey) {
       case LiveAuctionViewState.All:
-        items = liveAuctions;
+        // items = liveAuctions;
+        // CRYPTOKICKERS MODIFICATION
+        items = liveAuctions.concat(resaleAuctions);
         break;
       case LiveAuctionViewState.Participated:
         items = liveAuctions.concat(auctionsEnded).filter((m, idx) => m.myBidderMetadata?.info.bidderPubkey.toBase58() == wallet?.publicKey?.toBase58());
@@ -209,14 +211,15 @@ export const HomeView = () => {
                     <PreSaleBanner auction={heroAuction} />
                     {liveAuctionsView}
                   </TabPane>
-                  {auctionsEnded.length > 0 && (
+
+                  {/*auctionsEnded.length > 0 && (
                   <TabPane
                     tab={<span className="tab-title">Secondary Marketplace</span>}
                     key={LiveAuctionViewState.Resale}
                   >
                     {liveAuctionsView}
                   </TabPane>
-                  )}
+                  )*/}
                   {auctionsEnded.length > 0 && (
                   <TabPane
                     tab={<span className="tab-title">Ended Auctions</span>}
@@ -225,12 +228,9 @@ export const HomeView = () => {
                     {endedAuctions}
                   </TabPane>
                   )}
-<<<<<<< HEAD
-=======
                   {
                     // Show all participated live and ended auctions except hero auction
                   }
->>>>>>> upstream/master
                   {connected && (
                     <TabPane
                       tab={<span className="tab-title">Participated</span>}

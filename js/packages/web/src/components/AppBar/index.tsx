@@ -9,17 +9,17 @@ import {
   CurrentUserBadge,
   useWallet,
   useConnection,
-  STORE_OWNER_ADDRESS,
+  CRYPTOKICKERS_STORE_ID,
 } from '@oyster/common';
 import { saveAdmin } from '../../actions/saveAdmin';
 import { useMeta } from '../../contexts';
-import './index.less';
 
 const UserActions = () => {
   const { wallet } = useWallet();
   const { whitelistedCreatorsByCreator, store } = useMeta();
   const pubkey = wallet?.publicKey?.toBase58() || '';
 
+  /*
   const canCreate = useMemo(() => {
     return (
       store &&
@@ -28,6 +28,8 @@ const UserActions = () => {
         whitelistedCreatorsByCreator[pubkey]?.info?.activated)
     );
   }, [pubkey, whitelistedCreatorsByCreator, store]);
+  */
+  const canCreate = false;
 
   return (
     <>
@@ -45,7 +47,7 @@ const UserActions = () => {
         </Button>
       </Link>
       {wallet &&
-        wallet.publicKey?.toBase58() === STORE_OWNER_ADDRESS.toBase58() && (
+        wallet.publicKey?.toBase58() === CRYPTOKICKERS_STORE_ID.toBase58() && (
           <Link to={`/admin`}>
             <Button
               className="app-btn"
@@ -82,13 +84,9 @@ const DefaultActions = ({ vertical = false }: { vertical?: boolean }) => {
         <Button className="app-btn">Ended Auctions</Button>
       </Link>
       <Link to={`/artworks`}>
-<<<<<<< HEAD
-        <Button className="app-btn">{connected ? 'My Shoes' : 'Shoes'}</Button>
-=======
         <Button className="app-btn">
-          {connected ? 'My Items' : 'Artworks'}
+          {connected ? 'My Shoes' : 'Shoes'}
         </Button>
->>>>>>> upstream/master
       </Link>
       <Link to={`/artists`}>
         <Button className="app-btn">Creators</Button>
@@ -112,26 +110,13 @@ const MetaplexMenu = () => {
             <Menu>
               <Menu.Item>
                 <Link to={`/`}>
-<<<<<<< HEAD
-                  <Button className="app-btn">Live Auctions</Button>
-                </Link>
-              </Menu.Item>
-              <Menu.Item>
-                <Link to={`/auctions_closed`}>
-                  <Button className="app-btn">Ended Aucitons</Button>
-=======
                   <Button className="app-btn">Explore</Button>
->>>>>>> upstream/master
                 </Link>
               </Menu.Item>
               <Menu.Item>
                 <Link to={`/artworks`}>
                   <Button className="app-btn">
-<<<<<<< HEAD
                     {connected ? 'My Shoes' : 'Shoes'}
-=======
-                    {connected ? 'My Items' : 'Artworks'}
->>>>>>> upstream/master
                   </Button>
                 </Link>
               </Menu.Item>

@@ -1,10 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 import { findProgramAddress } from '../utils';
 
-export const CRYPTOKICKERS_STORE_ID = new PublicKey(
-  'kickNLAj7N8kfEtXLuhpYJLGwZjJahuz7nr9tjKgn8e',
-);
-
 export const WRAPPED_SOL_MINT = new PublicKey(
   'So11111111111111111111111111111111111111112',
 );
@@ -70,7 +66,7 @@ export const setStoreID = (storeId: any) => {
   STORE_OWNER_ADDRESS = storeId
     ? new PublicKey(`${storeId}`)
     : // DEFAULT STORE FRONT OWNER FOR METAPLEX
-      CRYPTOKICKERS_STORE_ID;
+      undefined;
 };
 
 const getStoreID = async () => {

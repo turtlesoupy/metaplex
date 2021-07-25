@@ -16,7 +16,6 @@ import {
   decodeVault,
   Edition,
   getMultipleAccounts,
-  MasterEdition,
   Metadata,
   MintParser,
   ParsedAccount,
@@ -56,8 +55,6 @@ import {
   Store,
   WhitelistedCreator,
   WhitelistedCreatorParser,
-  PayoutTicket,
-  decodePayoutTicket,
   PrizeTrackingTicket,
   decodePrizeTrackingTicket,
 } from '../models/metaplex';
