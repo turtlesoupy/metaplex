@@ -7,9 +7,8 @@ import { MenuOutlined } from '@ant-design/icons';
 import {
   ConnectButton,
   CurrentUserBadge,
+  programIds,
   useWallet,
-  useConnection,
-  CRYPTOKICKERS_STORE_ID,
 } from '@oyster/common';
 import { saveAdmin } from '../../actions/saveAdmin';
 import { useMeta } from '../../contexts';
@@ -30,6 +29,7 @@ const UserActions = () => {
   }, [pubkey, whitelistedCreatorsByCreator, store]);
   */
   const canCreate = false;
+  const PROGRAM_IDS = programIds();
 
   return (
     <>
@@ -47,7 +47,7 @@ const UserActions = () => {
         </Button>
       </Link>
       {wallet &&
-        wallet.publicKey?.toBase58() === CRYPTOKICKERS_STORE_ID.toBase58() && (
+        wallet.publicKey?.toBase58() === PROGRAM_IDS.store?.toBase58() && (
           <Link to={`/admin`}>
             <Button
               className="app-btn"

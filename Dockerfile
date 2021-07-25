@@ -5,6 +5,10 @@ FROM node:14.17.3-alpine as build
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat git
+RUN apk add --no-cache python3 py3-pip
+RUN apk add --no-cache make
+RUN apk add --no-cache gcc
+RUN apk add --no-cache g++
 
 # Set the working directory
 WORKDIR /app
@@ -13,7 +17,7 @@ WORKDIR /app
 COPY ./js /app
 
 # Install all the dependencies
-RUN yarn install --frozen-lockfile
+RUN yarn install
 RUN yarn bootstrap
 
 # HERE ADD YOUR STORE WALLET ADDRESS
