@@ -197,7 +197,9 @@ export const HomeView = () => {
           )}
         </>
       )}
-      <PreSaleBanner auction={heroAuction} />
+      {
+        // <PreSaleBanner auction={heroAuction} />
+      }
       <Layout>
         <Content style={{ display: 'flex', flexWrap: 'wrap' }}>
           <Col style={{ width: '100%', marginTop: 10 }}>
