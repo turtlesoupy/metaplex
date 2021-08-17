@@ -80,13 +80,8 @@ const DefaultActions = ({ vertical = false }: { vertical?: boolean }) => {
       <Link to={`/`}>
         <Button className="app-btn">Live Auctions</Button>
       </Link>
-      <Link to={`/auctions_closed`}>
-        <Button className="app-btn">Ended Auctions</Button>
-      </Link>
       <Link to={`/artworks`}>
-        <Button className="app-btn">
-          {connected ? 'My Shoes' : 'Shoes'}
-        </Button>
+        <Button className="app-btn">{connected ? 'My Shoes' : 'Shoes'}</Button>
       </Link>
       <Link to={`/artists`}>
         <Button className="app-btn">Creators</Button>
