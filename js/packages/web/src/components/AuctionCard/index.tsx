@@ -240,8 +240,7 @@ export const AuctionCard = ({
   const gapBidInvalid = useGapTickCheck(value, gapTick, gapTime, auctionView);
 
   const isAuctionManagerAuthorityNotWalletOwner =
-    auctionView.auctionManager.authority !==
-    wallet?.publicKey?.toBase58();
+    auctionView.auctionManager.authority !== wallet?.publicKey?.toBase58();
 
   const isAuctionNotStarted =
     auctionView.auction.info.state === AuctionState.Created;
@@ -259,90 +258,88 @@ export const AuctionCard = ({
         )}
         {!hideDefaultAction && connected && auctionView.auction.info.ended() && (
           <>
-          <Button
-            type="primary"
-            size="large"
-            className="action-btn"
-            disabled={
-              !myPayingAccount ||
-              (!auctionView.myBidderMetadata &&
-                isAuctionManagerAuthorityNotWalletOwner) ||
-              loading ||
-              !!auctionView.items.find(i => i.find(it => !it.metadata))
-            }
-            onClick={async () => {
-              setLoading(true);
-              setShowRedemptionIssue(false);
-              if (
-                wallet?.publicKey?.toBase58() === auctionView.auctionManager.authority
-              ) {
-                const totalCost =
-                  await calculateTotalCostOfRedeemingOtherPeoplesBids(
-                    connection,
-                    auctionView,
-                    bids,
-                    bidRedemptions,
-                  );
-                setPrintingCost(totalCost);
-                setShowWarningModal(true);
+            <Button
+              type="primary"
+              size="large"
+              className="action-btn"
+              disabled={
+                !myPayingAccount ||
+                (!auctionView.myBidderMetadata &&
+                  isAuctionManagerAuthorityNotWalletOwner) ||
+                loading ||
+                !!auctionView.items.find(i => i.find(it => !it.metadata))
               }
-              try {
-                if (eligibleForAnything) {
-                  await sendRedeemBid(
-                    connection,
-                    wallet,
-                    myPayingAccount.pubkey,
-                    auctionView,
-                    accountByMint,
-                    prizeTrackingTickets,
-                    bidRedemptions,
-                    bids,
-                  ).then(() => setShowRedeemedBidModal(true));
-                } else {
-                  await sendCancelBid(
-                    connection,
-                    wallet,
-                    myPayingAccount.pubkey,
-                    auctionView,
-                    accountByMint,
-                    bids,
-                    bidRedemptions,
-                    prizeTrackingTickets,
-                  );
+              onClick={async () => {
+                setLoading(true);
+                setShowRedemptionIssue(false);
+                if (
+                  wallet?.publicKey?.toBase58() ===
+                  auctionView.auctionManager.authority
+                ) {
+                  const totalCost =
+                    await calculateTotalCostOfRedeemingOtherPeoplesBids(
+                      connection,
+                      auctionView,
+                      bids,
+                      bidRedemptions,
+                    );
+                  setPrintingCost(totalCost);
+                  setShowWarningModal(true);
                 }
-              } catch (e) {
-                console.error(e);
-                setShowRedemptionIssue(true);
-              }
-              setLoading(false);
-            }}
-            style={{ marginTop: 20 }}
-          >
-            {loading ||
-            auctionView.items.find(i => i.find(it => !it.metadata)) ||
-            !myPayingAccount ? (
-              <Spin />
-            ) : eligibleForAnything ? (
-              `Redeem bid`
-            ) : (
-              `${
-                wallet?.publicKey &&
-                auctionView.auctionManager.authority === wallet.publicKey.toBase58()
-                  ? 'Reclaim Items'
-                  : 'Refund bid'
-              }`
-            )}
-          </Button>
+                try {
+                  if (eligibleForAnything) {
+                    await sendRedeemBid(
+                      connection,
+                      wallet,
+                      myPayingAccount.pubkey,
+                      auctionView,
+                      accountByMint,
+                      prizeTrackingTickets,
+                      bidRedemptions,
+                      bids,
+                    ).then(() => setShowRedeemedBidModal(true));
+                  } else {
+                    await sendCancelBid(
+                      connection,
+                      wallet,
+                      myPayingAccount.pubkey,
+                      auctionView,
+                      accountByMint,
+                      bids,
+                      bidRedemptions,
+                      prizeTrackingTickets,
+                    );
+                  }
+                } catch (e) {
+                  console.error(e);
+                  setShowRedemptionIssue(true);
+                }
+                setLoading(false);
+              }}
+              style={{ marginTop: 20 }}
+            >
+              {loading ||
+              auctionView.items.find(i => i.find(it => !it.metadata)) ||
+              !myPayingAccount ? (
+                <Spin />
+              ) : eligibleForAnything ? (
+                `Redeem bid`
+              ) : (
+                `${
+                  wallet?.publicKey &&
+                  auctionView.auctionManager.authority ===
+                    wallet.publicKey.toBase58()
+                    ? 'Reclaim Items'
+                    : 'Refund bid'
+                }`
+              )}
+            </Button>
 
-          <Button
-            type="primary"
-            size="large"
-            className="action-btn"
-          >
-            <Link to={`/auction/${auctionView.auction.pubkey.toBase58()}/billing`}>
-              Claim Funds
-            </Link>
-          </Button>
+            <Button type="primary" size="large" className="action-btn">
+              <Link to={`/auction/${auctionView.auction.pubkey}/billing`}>
+                Claim Funds
+              </Link>
+            </Button>
           </>
         )}
 
