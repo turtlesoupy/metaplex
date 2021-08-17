@@ -1,71 +1,85 @@
-import { programIds } from '@oyster/common';
+import { programIds, StringPublicKey, toPublicKey } from '@oyster/common';
 import {
-  PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } from '@solana/web3.js';
+import BN from 'bn.js';
 import { serialize } from 'borsh';
 
 import {
-  AuctionManagerSettings,
   getAuctionKeys,
-  InitAuctionManagerArgs,
+  getAuctionWinnerTokenTypeTracker,
+  InitAuctionManagerV2Args,
   SCHEMA,
+  TupleNumericType,
 } from '.';
 
-export async function initAuctionManager(
-  vault: PublicKey,
-  auctionManagerAuthority: PublicKey,
-  payer: PublicKey,
-  acceptPaymentAccount: PublicKey,
-  store: PublicKey,
-  settings: AuctionManagerSettings,
+export async function initAuctionManagerV2(
+  vault: StringPublicKey,
+  auctionManagerAuthority: StringPublicKey,
+  payer: StringPublicKey,
+  acceptPaymentAccount: StringPublicKey,
+  store: StringPublicKey,
+  amountType: TupleNumericType,
+  lengthType: TupleNumericType,
+  maxRanges: BN,
   instructions: TransactionInstruction[],
 ) {
   const PROGRAM_IDS = programIds();
   const { auctionKey, auctionManagerKey } = await getAuctionKeys(vault);
 
-  const value = new InitAuctionManagerArgs({
-    settings,
+  const value = new InitAuctionManagerV2Args({
+    amountType,
+    lengthType,
+    maxRanges,
   });
+
+  const tokenTracker = await getAuctionWinnerTokenTypeTracker(
+    auctionManagerKey,
+  );
 
   const data = Buffer.from(serialize(SCHEMA, value));
 
   const keys = [
     {
-      pubkey: auctionManagerKey,
+      pubkey: toPublicKey(auctionManagerKey),
       isSigner: false,
       isWritable: true,
     },
     {
-      pubkey: vault,
+      pubkey: toPublicKey(tokenTracker),
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: toPublicKey(vault),
       isSigner: false,
       isWritable: false,
     },
 
     {
-      pubkey: auctionKey,
+      pubkey: toPublicKey(auctionKey),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: auctionManagerAuthority,
+      pubkey: toPublicKey(auctionManagerAuthority),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: payer,
+      pubkey: toPublicKey(payer),
       isSigner: true,
       isWritable: false,
     },
     {
-      pubkey: acceptPaymentAccount,
+      pubkey: toPublicKey(acceptPaymentAccount),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: store,
+      pubkey: toPublicKey(store),
       isSigner: false,
       isWritable: false,
     },
@@ -83,7 +97,7 @@ export async function initAuctionManager(
   instructions.push(
     new TransactionInstruction({
       keys,
-      programId: PROGRAM_IDS.metaplex,
+      programId: toPublicKey(PROGRAM_IDS.metaplex),
       data,
     }),
   );

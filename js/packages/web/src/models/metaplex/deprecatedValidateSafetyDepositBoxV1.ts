@@ -1,125 +1,125 @@
-import { programIds, getEdition } from '@oyster/common';
+import { programIds, StringPublicKey, toPublicKey } from '@oyster/common';
 import {
-  PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } from '@solana/web3.js';
 import { serialize } from 'borsh';
 
-import {
-  getAuctionKeys,
-  getOriginalAuthority,
-  getSafetyDepositBoxValidationTicket,
-  SCHEMA,
-  ValidateSafetyDepositBoxArgs,
-} from '.';
+import { getAuctionKeys, getOriginalAuthority, SCHEMA } from '.';
 
-export async function validateSafetyDepositBox(
-  vault: PublicKey,
-  metadata: PublicKey,
-  safetyDepositBox: PublicKey,
-  safetyDepositTokenStore: PublicKey,
-  tokenMint: PublicKey,
-  auctionManagerAuthority: PublicKey,
-  metadataAuthority: PublicKey,
-  payer: PublicKey,
+import {
+  getSafetyDepositBoxValidationTicket,
+  DeprecatedValidateSafetyDepositBoxV1Args,
+} from './deprecatedStates';
+
+export async function deprecatedValidateSafetyDepositBoxV1(
+  vault: StringPublicKey,
+  metadata: StringPublicKey,
+  safetyDepositBox: StringPublicKey,
+  safetyDepositTokenStore: StringPublicKey,
+  tokenMint: StringPublicKey,
+  auctionManagerAuthority: StringPublicKey,
+  metadataAuthority: StringPublicKey,
+  payer: StringPublicKey,
   instructions: TransactionInstruction[],
-  edition: PublicKey,
-  whitelistedCreator: PublicKey | undefined,
-  store: PublicKey,
-  printingMint?: PublicKey,
-  printingMintAuthority?: PublicKey,
+  edition: StringPublicKey,
+  whitelistedCreator: StringPublicKey | undefined,
+  store: StringPublicKey,
+  printingMint?: StringPublicKey,
+  printingMintAuthority?: StringPublicKey,
 ) {
   const PROGRAM_IDS = programIds();
 
   const { auctionKey, auctionManagerKey } = await getAuctionKeys(vault);
 
-  const originalAuthorityLookup: PublicKey = await getOriginalAuthority(
+  const originalAuthorityLookup = await getOriginalAuthority(
     auctionKey,
     metadata,
   );
 
-  const value = new ValidateSafetyDepositBoxArgs();
+  const value = new DeprecatedValidateSafetyDepositBoxV1Args();
 
   const data = Buffer.from(serialize(SCHEMA, value));
   const keys = [
     {
-      pubkey: await getSafetyDepositBoxValidationTicket(
-        auctionManagerKey,
-        safetyDepositBox,
+      pubkey: toPublicKey(
+        await getSafetyDepositBoxValidationTicket(
+          auctionManagerKey,
+          safetyDepositBox,
+        ),
       ),
       isSigner: false,
       isWritable: true,
     },
     {
-      pubkey: auctionManagerKey,
+      pubkey: toPublicKey(auctionManagerKey),
       isSigner: false,
       isWritable: true,
     },
     {
-      pubkey: metadata,
+      pubkey: toPublicKey(metadata),
       isSigner: false,
       isWritable: true,
     },
     {
-      pubkey: originalAuthorityLookup,
+      pubkey: toPublicKey(originalAuthorityLookup),
       isSigner: false,
       isWritable: true,
     },
     {
-      pubkey: whitelistedCreator || SystemProgram.programId,
+      pubkey: toPublicKey(whitelistedCreator || SystemProgram.programId),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: store,
+      pubkey: toPublicKey(store),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: safetyDepositBox,
+      pubkey: toPublicKey(safetyDepositBox),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: safetyDepositTokenStore,
+      pubkey: toPublicKey(safetyDepositTokenStore),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: tokenMint,
+      pubkey: toPublicKey(tokenMint),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: edition,
+      pubkey: toPublicKey(edition),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: vault,
+      pubkey: toPublicKey(vault),
       isSigner: false,
       isWritable: false,
     },
     {
-      pubkey: auctionManagerAuthority,
+      pubkey: toPublicKey(auctionManagerAuthority),
       isSigner: true,
       isWritable: false,
     },
     {
-      pubkey: metadataAuthority,
+      pubkey: toPublicKey(metadataAuthority),
       isSigner: true,
       isWritable: false,
     },
 
     {
-      pubkey: payer,
+      pubkey: toPublicKey(payer),
       isSigner: true,
       isWritable: false,
     },
     {
-      pubkey: PROGRAM_IDS.metadata,
+      pubkey: toPublicKey(PROGRAM_IDS.metadata),
       isSigner: false,
       isWritable: false,
     },
@@ -137,13 +137,13 @@ export async function validateSafetyDepositBox(
 
   if (printingMint && printingMintAuthority) {
     keys.push({
-      pubkey: printingMint,
+      pubkey: toPublicKey(printingMint),
       isSigner: false,
       isWritable: true,
     });
 
     keys.push({
-      pubkey: printingMintAuthority,
+      pubkey: toPublicKey(printingMintAuthority),
       isSigner: true,
       isWritable: false,
     });
@@ -151,7 +151,7 @@ export async function validateSafetyDepositBox(
   instructions.push(
     new TransactionInstruction({
       keys,
-      programId: PROGRAM_IDS.metaplex,
+      programId: toPublicKey(PROGRAM_IDS.metaplex),
       data,
     }),
   );
