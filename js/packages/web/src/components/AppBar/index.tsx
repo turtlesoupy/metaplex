@@ -21,10 +21,8 @@ const UserActions = () => {
   /*
   const canCreate = useMemo(() => {
     return (
-      store &&
-      store.info &&
-      (store.info.public ||
-        whitelistedCreatorsByCreator[pubkey]?.info?.activated)
+      store?.info?.public ||
+      whitelistedCreatorsByCreator[pubkey]?.info?.activated
     );
   }, [pubkey, whitelistedCreatorsByCreator, store]);
   */
@@ -33,19 +31,23 @@ const UserActions = () => {
 
   return (
     <>
-      {/* <Link to={`#`}>
-        <Button className="app-btn">Bids</Button>
-      </Link> */}
-      {canCreate ? (
-        <Link to={`/art/create`}>
-          <Button className="app-btn">Create</Button>
-        </Link>
-      ) : null}
-      <Link to={`/auction/create/0`}>
-        <Button className="connector" type="primary">
-          Sell
-        </Button>
-      </Link>
+      {store && (
+        <>
+          {/* <Link to={`#`}>
+            <Button className="app-btn">Bids</Button>
+          </Link> */}
+          {canCreate ? (
+            <Link to={`/art/create`}>
+              <Button className="app-btn">Create</Button>
+            </Link>
+          ) : null}
+          <Link to={`/auction/create/0`}>
+            <Button className="connector" type="primary">
+              Sell
+            </Button>
+          </Link>
+        </>
+      )}
       {wallet &&
         wallet.publicKey?.toBase58() === PROGRAM_IDS.store?.toBase58() && (
           <Link to={`/admin`}>
@@ -141,8 +143,7 @@ export const AppBar = () => {
         <div className="divider" />
         <MetaplexMenu />
       </div>
-      {!connected && <ConnectButton type="primary" />}
-      {connected && (
+      {connected ? (
         <div className="app-right app-bar-box">
           <UserActions />
           <CurrentUserBadge
@@ -151,6 +152,8 @@ export const AppBar = () => {
             iconSize={24}
           />
         </div>
+      ) : (
+        <ConnectButton type="primary" allowWalletChange />
       )}
     </>
   );

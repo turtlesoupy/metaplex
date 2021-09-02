@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Col, Button, InputNumber, Spin } from 'antd';
 import { MemoryRouter, Route, Redirect, Link } from 'react-router-dom';
 
 import {
   useConnection,
   useUserAccounts,
-  contexts,
   MetaplexModal,
   MetaplexOverlay,
   formatAmount,
@@ -20,7 +19,10 @@ import {
   BidderMetadata,
   MAX_METADATA_LEN,
   MAX_EDITION_LEN,
+  placeBid,
+  useWalletModal,
 } from '@oyster/common';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { AuctionView, useBidsForAuction, useUserBalance } from '../../hooks';
 import { sendPlaceBid } from '../../actions/sendPlaceBid';
 import { AuctionNumbers } from './../AuctionNumbers';
@@ -43,8 +45,6 @@ import {
   BidRedemptionTicket,
   MAX_PRIZE_TRACKING_TICKET_SIZE,
 } from '../../models/metaplex';
-
-const { useWallet } = contexts.Wallet;
 
 async function calculateTotalCostOfRedeemingOtherPeoplesBids(
   connection: Connection,
@@ -184,7 +184,14 @@ export const AuctionCard = ({
   action?: JSX.Element;
 }) => {
   const connection = useConnection();
-  const { wallet, connected, connect } = useWallet();
+
+  const wallet = useWallet();
+  const { setVisible } = useWalletModal();
+  const connect = useCallback(
+    () => (wallet.wallet ? wallet.connect().catch() : setVisible(true)),
+    [wallet.wallet, wallet.connect, setVisible],
+  );
+
   const mintInfo = useMint(auctionView.auction.info.tokenMint);
   const { prizeTrackingTickets, bidRedemptions } = useMeta();
   const bids = useBidsForAuction(auctionView.auction.pubkey);
@@ -208,7 +215,7 @@ export const AuctionCard = ({
   const balance = useUserBalance(mintKey);
 
   const myPayingAccount = balance.accounts[0];
-  let winnerIndex = null;
+  let winnerIndex: number | null = null;
   if (auctionView.myBidderPot?.pubkey)
     winnerIndex = auctionView.auction.info.bidState.getWinnerIndex(
       auctionView.myBidderPot?.info.bidderAct,
@@ -256,8 +263,14 @@ export const AuctionCard = ({
             again.
           </span>
         )}
+<<<<<<< HEAD
         {!hideDefaultAction && connected && auctionView.auction.info.ended() && (
           <>
+=======
+        {!hideDefaultAction &&
+          wallet.connected &&
+          auctionView.auction.info.ended() && (
+>>>>>>> upstream/master
             <Button
               type="primary"
               size="large"
@@ -334,6 +347,7 @@ export const AuctionCard = ({
                 }`
               )}
             </Button>
+<<<<<<< HEAD
 
             <Button type="primary" size="large" className="action-btn">
               <Link to={`/auction/${auctionView.auction.pubkey}/billing`}>
@@ -342,9 +356,12 @@ export const AuctionCard = ({
             </Button>
           </>
         )}
+=======
+          )}
+>>>>>>> upstream/master
 
         {!hideDefaultAction &&
-          connected &&
+          wallet.connected &&
           !auctionView.auction.info.ended() &&
           (isAuctionNotStarted && !isAuctionManagerAuthorityNotWalletOwner ? (
             <Button
@@ -378,7 +395,7 @@ export const AuctionCard = ({
             </Button>
           ))}
 
-        {!hideDefaultAction && !connected && (
+        {!hideDefaultAction && !wallet.connected && (
           <Button
             type="primary"
             size="large"
@@ -653,7 +670,7 @@ export const AuctionCard = ({
               <Button
                 onClick={() => {
                   window.open(
-                    `https://ftx.com/pay/request?coin=SOL&address=${wallet?.publicKey?.toBase58()}&tag=&wallet=sol&memoIsRequired=false`,
+                    `https://ftx.com/pay/request?coin=SOL&address=${wallet.publicKey?.toBase58()}&tag=&wallet=sol&memoIsRequired=false`,
                     '_blank',
                     'resizable,width=680,height=860',
                   );
