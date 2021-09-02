@@ -73,15 +73,14 @@ export const AuctionListView = () => {
 
   switch (activeKey) {
     case LiveAuctionViewState.All:
-      items = liveAuctions;
+      items = liveAuctions.concat(resaleAuctions);
       break;
     case LiveAuctionViewState.Participated:
       items = liveAuctions
         .concat(auctionsEnded)
         .filter(
           (m, idx) =>
-            m.myBidderMetadata?.info.bidderPubkey ==
-            publicKey?.toBase58(),
+            m.myBidderMetadata?.info.bidderPubkey == publicKey?.toBase58(),
         );
       break;
     case LiveAuctionViewState.Resale:
@@ -166,7 +165,7 @@ export const AuctionListView = () => {
                   >
                     {liveAuctionsView}
                   </TabPane>
-                  {auctionsEnded.length > 0 && (
+                  {/*auctionsEnded.length > 0 && (
                     <TabPane
                       tab={
                         <span className="tab-title">Secondary Marketplace</span>
@@ -175,7 +174,7 @@ export const AuctionListView = () => {
                     >
                       {liveAuctionsView}
                     </TabPane>
-                  )}
+                    )*/}
                   {auctionsEnded.length > 0 && (
                     <TabPane
                       tab={<span className="tab-title">Ended Auctions</span>}

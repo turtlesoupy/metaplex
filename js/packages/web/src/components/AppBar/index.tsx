@@ -4,19 +4,14 @@ import { Button, Dropdown, Menu } from 'antd';
 import { Notifications } from '../Notifications';
 import useWindowDimensions from '../../utils/layout';
 import { MenuOutlined } from '@ant-design/icons';
-import {
-  ConnectButton,
-  CurrentUserBadge,
-  programIds,
-  useWallet,
-} from '@oyster/common';
+import { ConnectButton, CurrentUserBadge, programIds } from '@oyster/common';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { saveAdmin } from '../../actions/saveAdmin';
 import { useMeta } from '../../contexts';
 
 const UserActions = () => {
-  const { wallet } = useWallet();
+  const { publicKey } = useWallet();
   const { whitelistedCreatorsByCreator, store } = useMeta();
-  const pubkey = wallet?.publicKey?.toBase58() || '';
 
   /*
   const canCreate = useMemo(() => {
@@ -48,24 +43,23 @@ const UserActions = () => {
           </Link>
         </>
       )}
-      {wallet &&
-        wallet.publicKey?.toBase58() === PROGRAM_IDS.store?.toBase58() && (
-          <Link to={`/admin`}>
-            <Button
-              className="app-btn"
-              onClick={e => {
-                e.preventDefault();
-                /*
+      {publicKey?.toBase58() === PROGRAM_IDS.store?.toBase58() && (
+        <Link to={`/admin`}>
+          <Button
+            className="app-btn"
+            onClick={e => {
+              e.preventDefault();
+              /*
                 (async () => {
                   await saveAdmin(connection, wallet, true, []);
                 })();
                 */
-              }}
-            >
-              Admin
-            </Button>
-          </Link>
-        )}
+            }}
+          >
+            Admin
+          </Button>
+        </Link>
+      )}
     </>
   );
 };
