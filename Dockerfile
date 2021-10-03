@@ -22,6 +22,8 @@ RUN yarn bootstrap
 
 # HERE ADD YOUR STORE WALLET ADDRESS
 ENV REACT_APP_STORE_OWNER_ADDRESS_ADDRESS="kickNLAj7N8kfEtXLuhpYJLGwZjJahuz7nr9tjKgn8e"
+ENV REACT_APP_BIG_STORE="FALSE"
+ENV REACT_APP_STORE_ADDRESS=""
 
 # Generate the build of the application
 RUN yarn build
