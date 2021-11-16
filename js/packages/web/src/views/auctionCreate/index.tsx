@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Divider,
   Steps,
@@ -31,10 +31,12 @@ import {
   IPartialCreateAuctionArgs,
   MetadataKey,
   StringPublicKey,
+  WRAPPED_SOL_MINT,
+  shortenAddress,
 } from '@oyster/common';
-import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { MintLayout } from '@solana/spl-token';
+import { MintInfo, MintLayout } from '@solana/spl-token';
 import { useHistory, useParams } from 'react-router-dom';
 import { capitalize } from 'lodash';
 import {
@@ -54,6 +56,10 @@ import { useMeta } from '../../contexts';
 import useWindowDimensions from '../../utils/layout';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import { SystemProgram } from '@solana/web3.js';
+import TokenDialog, { TokenButton } from '../../components/TokenDialog';
+import { useTokenList } from '../../contexts/tokenList';
+import { mintTo } from '@project-serum/serum/lib/token-instructions';
+import { TokenInfo } from '@solana/spl-token-registry';
 
 const { Option } = Select;
 const { Step } = Steps;
@@ -65,6 +71,12 @@ export enum AuctionCategory {
   Single,
   Open,
   Tiered,
+}
+
+enum InstantSaleType {
+  Limited,
+  Single,
+  Open,
 }
 
 interface TierDummyEntry {
@@ -123,12 +135,17 @@ export interface AuctionState {
   winnersCount: number;
 
   instantSalePrice?: number;
+  instantSaleType?: InstantSaleType;
+
+  quoteMintAddress: string;
+  quoteMintInfo: MintInfo;
+  quoteMintInfoExtended: TokenInfo;
 }
 
 export const AuctionCreateView = () => {
   const connection = useConnection();
   const wallet = useWallet();
-  const { whitelistedCreatorsByCreator } = useMeta();
+  const { whitelistedCreatorsByCreator, storeIndexer } = useMeta();
   const { step_param }: { step_param: string } = useParams();
   const history = useHistory();
   const mint = useMint(QUOTE_MINT);
@@ -154,12 +171,20 @@ export const AuctionCreateView = () => {
     winnersCount: 1,
     startSaleTS: undefined,
     startListTS: undefined,
+    quoteMintAddress: '',
+    //@ts-ignore
+    quoteMintInfo: undefined,
+    //@ts-ignore
+    quoteMintInfoExtended: undefined,
   });
 
   const [tieredAttributes, setTieredAttributes] = useState<TieredAuctionState>({
     items: [],
     tiers: [],
   });
+  const [quoteMintAddress, setQuoteMintAddress] = useState<string>()
+  const [quoteMintInfo, setQuoteMintInfo] = useState<MintInfo>()
+  const [quoteMintInfoExtended, setQuoteMintInfoExtended] = useState<TokenInfo>()
 
   useEffect(() => {
     if (step_param) setStep(parseInt(step_param));
@@ -173,26 +198,47 @@ export const AuctionCreateView = () => {
 
   const createAuction = async () => {
     let winnerLimit: WinnerLimit;
-    if (attributes.category === AuctionCategory.InstantSale) {
-      if (attributes.items.length > 0) {
-        const item = attributes.items[0];
-        if (!attributes.editions) {
+    //const mint = attributes.quoteMintInfo
+    if (
+      attributes.category === AuctionCategory.InstantSale &&
+      attributes.instantSaleType === InstantSaleType.Open
+    ) {
+      const { items, instantSalePrice } = attributes;
+
+      if (items.length > 0 && items[0].participationConfig) {
+        items[0].participationConfig.fixedPrice = new BN(
+          toLamports(instantSalePrice, mint) || 0,
+        );
+      }
+
+      winnerLimit = new WinnerLimit({
+        type: WinnerLimitType.Unlimited,
+        usize: ZERO,
+      });
+    } else if (attributes.category === AuctionCategory.InstantSale) {
+      const { items, editions } = attributes;
+
+      if (items.length > 0) {
+        const item = items[0];
+        if (!editions) {
           item.winningConfigType =
             item.metadata.info.updateAuthority ===
             (wallet?.publicKey || SystemProgram.programId).toBase58()
               ? WinningConfigType.FullRightsTransfer
               : WinningConfigType.TokenOnlyTransfer;
         }
+
         item.amountRanges = [
           new AmountRange({
             amount: new BN(1),
-            length: new BN(attributes.editions || 1),
+            length: new BN(editions || 1),
           }),
         ];
       }
+
       winnerLimit = new WinnerLimit({
         type: WinnerLimitType.Capped,
-        usize: new BN(attributes.editions || 1),
+        usize: new BN(editions || 1),
       });
     } else if (attributes.category === AuctionCategory.Open) {
       if (
@@ -408,6 +454,9 @@ export const AuctionCreateView = () => {
       attributes.instantSalePrice &&
       attributes.priceFloor === attributes.instantSalePrice;
 
+    const LAMPORTS_PER_TOKEN = attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? LAMPORTS_PER_SOL
+      : Math.pow(10, attributes.quoteMintInfo.decimals || 0)
+
     const auctionSettings: IPartialCreateAuctionArgs = {
       winners: winnerLimit,
       endAuctionAt: isInstantSale
@@ -434,33 +483,40 @@ export const AuctionCreateView = () => {
         type: attributes.priceFloor
           ? PriceFloorType.Minimum
           : PriceFloorType.None,
-        minPrice: new BN((attributes.priceFloor || 0) * LAMPORTS_PER_SOL),
+        minPrice: new BN((attributes.priceFloor || 0) * LAMPORTS_PER_TOKEN),
       }),
-      tokenMint: QUOTE_MINT.toBase58(),
+      tokenMint: attributes.quoteMintAddress,
       gapTickSizePercentage: attributes.tickSizeEndingPhase || null,
       tickSize: attributes.priceTick
-        ? new BN(attributes.priceTick * LAMPORTS_PER_SOL)
+        ? new BN(attributes.priceTick * LAMPORTS_PER_TOKEN)
         : null,
       instantSalePrice: attributes.instantSalePrice
-        ? new BN((attributes.instantSalePrice || 0) * LAMPORTS_PER_SOL)
+        ? new BN((attributes.instantSalePrice || 0) * LAMPORTS_PER_TOKEN)
         : null,
       name: null,
     };
+
+    const isOpenEdition =
+      attributes.category === AuctionCategory.Open ||
+      attributes.instantSaleType === InstantSaleType.Open;
+    const safetyDepositDrafts = isOpenEdition
+      ? []
+      : attributes.category !== AuctionCategory.Tiered
+      ? attributes.items
+      : tieredAttributes.items;
+    const participationSafetyDepositDraft = isOpenEdition
+      ? attributes.items[0]
+      : attributes.participationNFT;
 
     const _auctionObj = await createAuctionManager(
       connection,
       wallet,
       whitelistedCreatorsByCreator,
       auctionSettings,
-      attributes.category === AuctionCategory.Open
-        ? []
-        : attributes.category !== AuctionCategory.Tiered
-        ? attributes.items
-        : tieredAttributes.items,
-      attributes.category === AuctionCategory.Open
-        ? attributes.items[0]
-        : attributes.participationNFT,
-      QUOTE_MINT.toBase58(),
+      safetyDepositDrafts,
+      participationSafetyDepositDraft,
+      attributes.quoteMintAddress,
+      storeIndexer,
     );
     setAuctionObj(_auctionObj);
   };
@@ -616,7 +672,7 @@ export const AuctionCreateView = () => {
 
   return (
     <>
-      <Row style={{ paddingTop: 50 }}>
+      <Row className="creator-base-page" style={{ paddingTop: 50 }}>
         {stepsVisible && (
           <Col span={24} md={4}>
             <Steps
@@ -745,19 +801,42 @@ const CategoryStep = (props: {
   );
 };
 
-const InstantSaleStep = (props: {
+const InstantSaleStep = ({
+  attributes,
+  setAttributes,
+  confirm,
+}: {
   attributes: AuctionState;
   setAttributes: (attr: AuctionState) => void;
   confirm: () => void;
 }) => {
-  const [copiesChecked, setCopiesChecked] = useState(false);
-  const copiesEnabled = React.useMemo(
-    () => !!props.attributes?.items?.[0]?.masterEdition?.info?.maxSupply,
-    [props.attributes?.items?.[0]],
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [mint, setMint] = useState<PublicKey>(WRAPPED_SOL_MINT)
+  // give default value to mint
+  const mintInfo = useTokenList().tokenMap.get((!mint? QUOTE_MINT.toString(): mint.toString()))
+
+  attributes.quoteMintAddress = mint? mint.toBase58(): QUOTE_MINT.toBase58()
+
+  if (attributes.quoteMintAddress) {
+    attributes.quoteMintInfo = useMint(attributes.quoteMintAddress)!
+    attributes.quoteMintInfoExtended = useTokenList().tokenMap.get(attributes.quoteMintAddress)!
+  }
+
+  //console.log("OBJ MINT", mint.toBase58())
+
+  const copiesEnabled = useMemo(
+    () => !!attributes?.items?.[0]?.masterEdition?.info?.maxSupply,
+    [attributes?.items?.[0]],
+  );
+  const artistFilter = useCallback(
+    (i: SafetyDepositDraft) =>
+      !(i.metadata.info.data.creators || []).some((c: Creator) => !c.verified),
+    [],
   );
 
-  let artistFilter = (i: SafetyDepositDraft) =>
-    !(i.metadata.info.data.creators || []).find((c: Creator) => !c.verified);
+  const isLimitedEdition =
+    attributes.instantSaleType === InstantSaleType.Limited;
+  const shouldRenderSelect = attributes.items.length > 0;
 
   return (
     <>
@@ -769,45 +848,73 @@ const InstantSaleStep = (props: {
         <Col xl={24}>
           <ArtSelector
             filter={artistFilter}
-            selected={props.attributes.items}
+            selected={attributes.items}
             setSelected={items => {
-              props.setAttributes({ ...props.attributes, items });
+              setAttributes({ ...attributes, items });
             }}
             allowMultiple={false}
           >
             Select NFT
           </ArtSelector>
 
+          {shouldRenderSelect && (
+            <label className="action-field">
+              <Select
+                defaultValue={
+                  attributes.instantSaleType || InstantSaleType.Single
+                }
+                onChange={value =>
+                  setAttributes({
+                    ...attributes,
+                    instantSaleType: value,
+                  })
+                }
+              >
+                <Option value={InstantSaleType.Single}>
+                  Sell unique token
+                </Option>
+                {copiesEnabled && (
+                  <Option value={InstantSaleType.Limited}>
+                    Sell limited number of copies
+                  </Option>
+                )}
+                {!copiesEnabled && (
+                  <Option value={InstantSaleType.Open}>
+                    Sell unlimited number of copies
+                  </Option>
+                )}
+              </Select>
+              {isLimitedEdition && (
+                <>
+                  <span className="field-info">
+                    Each copy will be given unique edition number e.g. 1 of 30
+                  </span>
+                  <Input
+                    autoFocus
+                    className="input"
+                    placeholder="Enter number of copies sold"
+                    allowClear
+                    onChange={info =>
+                      setAttributes({
+                        ...attributes,
+                        editions: parseInt(info.target.value),
+                      })
+                    }
+                  />
+                </>
+              )}
+            </label>
+          )}
           <label className="action-field">
-            <Checkbox
-              defaultChecked={false}
-              checked={copiesChecked}
-              disabled={!copiesEnabled}
-              onChange={e => setCopiesChecked(e.target.checked)}
-            >
-              <span className="field-title">
-                Create copies of a Master Edition NFT?
-              </span>
-            </Checkbox>
-            {copiesChecked && copiesEnabled && (
-              <>
-                <span className="field-info">
-                  Each copy will be given unique edition number e.g. 1 of 30
-                </span>
-                <Input
-                  autoFocus
-                  className="input"
-                  placeholder="Enter number of copies sold"
-                  allowClear
-                  onChange={info =>
-                    props.setAttributes({
-                      ...props.attributes,
-                      editions: parseInt(info.target.value),
-                    })
-                  }
-                />
-              </>
-            )}
+            <span className="field-title">Auction mint</span>
+            <TokenButton mint={mint} onClick={() => setShowTokenDialog(true)} />
+            <TokenDialog
+              setMint={setMint}
+              open={showTokenDialog}
+              onClose={() => {
+                setShowTokenDialog(false); 
+              }}
+            />
           </label>
 
           <label className="action-field">
@@ -822,10 +929,10 @@ const InstantSaleStep = (props: {
               className="input"
               placeholder="Price"
               prefix="◎"
-              suffix="SOL"
+              suffix={mintInfo?.symbol || "CUSTOM"}
               onChange={info =>
-                props.setAttributes({
-                  ...props.attributes,
+                setAttributes({
+                  ...attributes,
                   priceFloor: parseFloat(info.target.value),
                   instantSalePrice: parseFloat(info.target.value),
                 })
@@ -839,7 +946,7 @@ const InstantSaleStep = (props: {
           type="primary"
           size="large"
           onClick={() => {
-            props.confirm();
+            confirm();
           }}
           className="action-btn"
         >
@@ -855,6 +962,18 @@ const CopiesStep = (props: {
   setAttributes: (attr: AuctionState) => void;
   confirm: () => void;
 }) => {
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [mint, setMint] = useState<PublicKey>(WRAPPED_SOL_MINT)
+  // give default value to mint
+  const mintInfo = useTokenList().tokenMap.get((!mint? QUOTE_MINT.toString(): mint.toString()))
+
+  props.attributes.quoteMintAddress = mint? mint.toBase58(): QUOTE_MINT.toBase58()
+  
+  if (props.attributes.quoteMintAddress) {
+    props.attributes.quoteMintInfo = useMint(props.attributes.quoteMintAddress)!
+    props.attributes.quoteMintInfoExtended = useTokenList().tokenMap.get(props.attributes.quoteMintAddress)!
+  }
+
   let artistFilter = (i: SafetyDepositDraft) =>
     !(i.metadata.info.data.creators || []).find((c: Creator) => !c.verified);
   let filter: (i: SafetyDepositDraft) => boolean = (i: SafetyDepositDraft) =>
@@ -893,6 +1012,18 @@ const CopiesStep = (props: {
           >
             Select NFT
           </ArtSelector>
+              
+          <label className="action-field">
+            <span className="field-title">Auction mint</span>
+            <TokenButton mint={mint} onClick={() => setShowTokenDialog(true)} />
+            <TokenDialog
+              setMint={setMint}
+              open={showTokenDialog}
+              onClose={() => {
+                setShowTokenDialog(false); 
+              }}
+            />
+          </label>
           {props.attributes.category === AuctionCategory.Limited && (
             <label className="action-field">
               <span className="field-title">
@@ -938,6 +1069,18 @@ const NumberOfWinnersStep = (props: {
   setAttributes: (attr: AuctionState) => void;
   confirm: () => void;
 }) => {
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [mint, setMint] = useState<PublicKey>(WRAPPED_SOL_MINT)
+  // give default value to mint
+  const mintInfo = useTokenList().tokenMap.get((!mint? QUOTE_MINT.toString(): mint.toString()))
+
+  props.attributes.quoteMintAddress = mint? mint.toBase58(): QUOTE_MINT.toBase58()
+
+  if (props.attributes.quoteMintAddress) {
+    props.attributes.quoteMintInfo = useMint(props.attributes.quoteMintAddress)!
+    props.attributes.quoteMintInfoExtended = useTokenList().tokenMap.get(props.attributes.quoteMintAddress)!
+  }
+
   return (
     <>
       <Row className="call-to-action">
@@ -966,6 +1109,21 @@ const NumberOfWinnersStep = (props: {
               }
             />
           </label>
+              
+              <label className="action-field">
+                <span className="field-title">Auction mint</span>
+                <span className="field-info">
+                  This will be the quote mint for your auction.
+                </span>
+                <TokenButton mint={mint} onClick={() => setShowTokenDialog(true)} />
+                <TokenDialog
+                  setMint={setMint}
+                  open={showTokenDialog}
+                  onClose={() => {
+                    setShowTokenDialog(false); 
+                  }}
+                />
+              </label>
         </Col>
       </Row>
       <Row>
@@ -987,11 +1145,20 @@ const PriceAuction = (props: {
   setAttributes: (attr: AuctionState) => void;
   confirm: () => void;
 }) => {
+  console.log(props.attributes)
+  const quoteMintName = props.attributes?.quoteMintInfoExtended?.name || "Custom Token"
+  const quoteMintExt = props.attributes?.quoteMintInfoExtended?.symbol || shortenAddress(props.attributes.quoteMintAddress)
   return (
     <>
       <Row className="call-to-action">
         <h2>Price</h2>
-        <p>Set the price for your auction.</p>
+        <p>
+          Set the price for your auction. 
+          {props.attributes.quoteMintAddress != WRAPPED_SOL_MINT.toBase58() && ` Warning! the auction quote mint is `}
+          {props.attributes.quoteMintAddress != WRAPPED_SOL_MINT.toBase58()&& <a href={`https://explorer.solana.com/address/${props.attributes?.quoteMintAddress}`} target="_blank"> {props.attributes?.quoteMintAddress != WRAPPED_SOL_MINT.toBase58() && 
+            `${quoteMintName} (${quoteMintExt})`} 
+          </a>}
+        </p>
       </Row>
       <Row className="content-action">
         <Col className="section" xl={24}>
@@ -1009,7 +1176,8 @@ const PriceAuction = (props: {
                 className="input"
                 placeholder="Fixed Price"
                 prefix="◎"
-                suffix="SOL"
+                suffix={props.attributes.quoteMintInfoExtended? props.attributes.quoteMintInfoExtended.symbol
+                    : props.attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? "SOL": "CUSTOM"}
                 onChange={info =>
                   props.setAttributes({
                     ...props.attributes,
@@ -1025,7 +1193,7 @@ const PriceAuction = (props: {
             <label className="action-field">
               <span className="field-title">Price Floor</span>
               <span className="field-info">
-                This is the starting bid price for your auction.
+                This is the starting bid price for your auction. 
               </span>
               <Input
                 type="number"
@@ -1034,7 +1202,8 @@ const PriceAuction = (props: {
                 className="input"
                 placeholder="Price"
                 prefix="◎"
-                suffix="SOL"
+                suffix={props.attributes.quoteMintInfoExtended? props.attributes.quoteMintInfoExtended.symbol
+                  : props.attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? "SOL": "CUSTOM"}
                 onChange={info =>
                   props.setAttributes({
                     ...props.attributes,
@@ -1053,9 +1222,11 @@ const PriceAuction = (props: {
               type="number"
               min={0}
               className="input"
-              placeholder="Tick size in SOL"
+              placeholder={`Tick size in ${props.attributes.quoteMintInfoExtended? props.attributes.quoteMintInfoExtended.symbol
+                : props.attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? "SOL": "your custom currency"}`}
               prefix="◎"
-              suffix="SOL"
+              suffix={props.attributes.quoteMintInfoExtended? props.attributes.quoteMintInfoExtended.symbol
+                : props.attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? "SOL": "CUSTOM"}
               onChange={info =>
                 props.setAttributes({
                   ...props.attributes,
@@ -1365,6 +1536,7 @@ const TierTableStep = (props: {
   maxWinners: number;
   confirm: () => void;
 }) => {
+
   const newImmutableTiers = (tiers: Tier[]) => {
     return tiers.map(wc => ({
       items: [...wc.items.map(it => ({ ...it }))],
@@ -1689,7 +1861,8 @@ const ParticipationStep = (props: {
               className="input"
               placeholder="Fixed Price"
               prefix="◎"
-              suffix="SOL"
+              suffix={props.attributes.quoteMintInfoExtended? props.attributes.quoteMintInfoExtended.symbol
+                : props.attributes.quoteMintAddress == WRAPPED_SOL_MINT.toBase58()? "SOL": "CUSTOM"}
               onChange={info =>
                 props.setAttributes({
                   ...props.attributes,
@@ -1726,7 +1899,6 @@ const ReviewStep = (props: {
       props.connection.getMinimumBalanceForRentExemption(MintLayout.span),
       props.connection.getMinimumBalanceForRentExemption(MAX_METADATA_LEN),
     ]);
-
     // TODO: add
   }, [setCost]);
 
@@ -1755,7 +1927,7 @@ const ReviewStep = (props: {
             }
           />
           {cost ? (
-            <AmountLabel title="Cost to Create" amount={cost} />
+            <AmountLabel title="Cost to Create" amount={cost} tokenInfo={useTokenList().tokenMap.get(WRAPPED_SOL_MINT.toString())}/>
           ) : (
             <Spin />
           )}

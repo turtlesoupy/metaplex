@@ -33,7 +33,7 @@ const MeshArtContent = ({
         uri={uri}
         className={className}
         preview={false}
-        style={{ width: 300, ...style }}
+        style={{ width: '100%', ...style }}
       />
     );
   }
@@ -41,7 +41,7 @@ const MeshArtContent = ({
   return <MeshViewer url={renderURL} className={className} style={style} />;
 };
 
-const CachedImageContent = ({
+export const CachedImageContent = ({
   uri,
   className,
   preview,
@@ -113,7 +113,7 @@ const VideoArtContent = ({
 
   const content =
     likelyVideo &&
-      likelyVideo.startsWith('https://watch.videodelivery.net/') ? (
+    likelyVideo.startsWith('https://watch.videodelivery.net/') ? (
       <div className={`${className} square`}>
         <Stream
           streamRef={(e: any) => playerRef(e)}
@@ -176,27 +176,31 @@ const HTMLContent = ({
   files?: (MetadataFile | string)[];
   artView?: boolean;
 }) => {
-  if (!artView){
-    return <CachedImageContent
-    uri={uri}
-    className={className}
-    preview={preview}
-    style={style}
-  />
+  if (!artView) {
+    return (
+      <CachedImageContent
+        uri={uri}
+        className={className}
+        preview={preview}
+        style={style}
+      />
+    );
   }
   const htmlURL =
     files && files.length > 0 && typeof files[0] === 'string'
       ? files[0]
       : animationUrl;
   return (
-    <iframe allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+    <iframe
+      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
       sandbox="allow-scripts"
       frameBorder="0"
       src={htmlURL}
       className={className}
-      style={style}></iframe>);
+      style={style}
+    ></iframe>
+  );
 };
-
 
 export const ArtContent = ({
   category,
@@ -273,7 +277,7 @@ export const ArtContent = ({
         animationURL={animationURL}
         active={active}
       />
-    ) : (category === 'html' || animationUrlExt === 'html') ? (
+    ) : category === 'html' || animationUrlExt === 'html' ? (
       <HTMLContent
         uri={uri}
         animationUrl={animationURL}

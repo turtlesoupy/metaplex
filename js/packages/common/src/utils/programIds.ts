@@ -11,6 +11,7 @@ import {
   MEMO_ID,
   VAULT_ID,
   AUCTION_ID,
+  PACK_CREATE_ID,
   toPublicKey,
 } from './ids';
 
@@ -19,6 +20,7 @@ export const getStoreID = async (storeOwnerAddress?: string) => {
     return undefined;
   }
 
+  console.log('Store owner', storeOwnerAddress, METAPLEX_ID);
   const programs = await findProgramAddress(
     [
       Buffer.from('metaplex'),
@@ -49,6 +51,7 @@ export const programIds = () => {
     vault: VAULT_ID,
     auction: AUCTION_ID,
     metaplex: METAPLEX_ID,
+    pack_create: PACK_CREATE_ID,
     store: STORE,
   };
 };
