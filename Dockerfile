@@ -9,6 +9,12 @@ RUN apk add --no-cache python3 py3-pip
 RUN apk add --no-cache make
 RUN apk add --no-cache gcc
 RUN apk add --no-cache g++
+RUN apk add --no-cache \
+    build-base \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev
 
 # Set the working directory
 WORKDIR /app
