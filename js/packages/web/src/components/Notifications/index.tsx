@@ -570,6 +570,9 @@ export function Notifications() {
   const justContent = (
     <Popover placement="bottomLeft" content={content} trigger="click">
       <img src={'/bell.svg'} style={{ cursor: 'pointer' }} />
+      {!!notifications.length && (
+        <div className="mobile-notification">{notifications.length - 1}</div>
+      )}
     </Popover>
   );
 
