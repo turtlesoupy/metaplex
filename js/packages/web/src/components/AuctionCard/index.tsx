@@ -42,6 +42,7 @@ import {
   sendRedeemBid,
   eligibleForParticipationPrizeGivenWinningIndex,
 } from '../../actions/sendRedeemBid';
+import { AmountLabel } from '../AmountLabel';
 import { sendCancelBid } from '../../actions/cancelBid';
 import { startAuctionManually } from '../../actions/startAuctionManually';
 import BN from 'bn.js';
@@ -50,7 +51,6 @@ import { QUOTE_MINT } from '../../constants';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useMeta } from '../../contexts';
 import moment from 'moment';
-import { AmountLabel } from '../AmountLabel';
 import { HowAuctionsWorkModal } from '../HowAuctionsWorkModal';
 import { AccountLayout, MintLayout } from '@solana/spl-token';
 import { findEligibleParticipationBidsForRedemption } from '../../actions/claimUnusedPrizes';
@@ -63,7 +63,7 @@ import { useActionButtonContent } from './hooks/useActionButtonContent';
 import { endSale } from './utils/endSale';
 import { useInstantSaleState } from './hooks/useInstantSaleState';
 import { useTokenList } from '../../contexts/tokenList';
-import { FundsIssueModal } from "../FundsIssueModal";
+import { FundsIssueModal } from '../FundsIssueModal';
 import CongratulationsModal from '../Modals/CongratulationsModal';
 
 async function calculateTotalCostOfRedeemingOtherPeoplesBids(
@@ -231,7 +231,7 @@ export const AuctionCard = ({
   const [showBidPlaced, setShowBidPlaced] = useState<boolean>(false);
   const [showPlaceBid, setShowPlaceBid] = useState<boolean>(false);
   const [lastBid, setLastBid] = useState<{ amount: BN } | undefined>(undefined);
-  const [showFundsIssueModal, setShowFundsIssueModal] = useState(false)
+  const [showFundsIssueModal, setShowFundsIssueModal] = useState(false);
   const [isOpenPurchase, setIsOpenPurchase] = useState<boolean>(false);
   const [isOpenClaim, setIsOpenClaim] = useState<boolean>(false);
 
@@ -257,9 +257,10 @@ export const AuctionCard = ({
 
   //console.log("[--P]AuctionCard", tokenInfo, mintKey)
   const myPayingAccount = balance.accounts[0];
-  const instantSalePrice = useMemo(() =>
-    auctionView.auctionDataExtended?.info.instantSalePrice
-    , [auctionView.auctionDataExtended]);
+  const instantSalePrice = useMemo(
+    () => auctionView.auctionDataExtended?.info.instantSalePrice,
+    [auctionView.auctionDataExtended],
+  );
   let winnerIndex: number | null = null;
   if (auctionView.myBidderPot?.pubkey)
     winnerIndex = auctionView.auction.info.bidState.getWinnerIndex(
@@ -363,10 +364,19 @@ export const AuctionCard = ({
     setShowEndingBidModal(true);
     setLoading(false);
   };
-  const { canEndInstantSale, isAlreadyBought, canClaimPurchasedItem, canClaimItem } = useInstantSaleState(auctionView);
+  const {
+    canEndInstantSale,
+    isAlreadyBought,
+    canClaimPurchasedItem,
+    canClaimItem,
+  } = useInstantSaleState(auctionView);
   const instantSaleAction = () => {
-    const isNotEnoughLamports = balance.balanceLamports < (instantSalePrice?.toNumber()  || 0)
-    if (isNotEnoughLamports && !(canClaimPurchasedItem || canClaimItem || canEndInstantSale) ) {
+    const isNotEnoughLamports =
+      balance.balanceLamports < (instantSalePrice?.toNumber() || 0);
+    if (
+      isNotEnoughLamports &&
+      !(canClaimPurchasedItem || canClaimItem || canEndInstantSale)
+    ) {
       setShowFundsIssueModal(true);
       return;
     }
@@ -494,8 +504,6 @@ export const AuctionCard = ({
     shouldHideInstantSale ||
     (auctionView.vault.info.state === VaultState.Deactivated &&
       isBidderPotEmpty);
-
-
 
   const actionButtonContent = useActionButtonContent(auctionView);
 
@@ -913,7 +921,7 @@ export const AuctionCard = ({
           }}
         >
           Your {auctionView.isInstantSale ? 'purchase' : 'bid'} has been
-          redeemed please view your NFTs in <Link to="/artworks">My Items</Link>
+          redeemed please view your NFTs in <Link to="/artworks">My Shoes</Link>
           .
         </p>
         <Button
@@ -944,15 +952,17 @@ export const AuctionCard = ({
         isModalVisible={isOpenPurchase}
         onClose={() => setIsOpenPurchase(false)}
         onClickOk={() => window.location.reload()}
-        buttonText='Reload'
-        content='Reload the page and click claim to receive your NFT. Then check your wallet to confirm it has arrived. It may take a few minutes to process.'
+        buttonText="Reload"
+        content="Reload the page and click claim to receive your NFT. Then check your wallet to confirm it has arrived. It may take a few minutes to process."
       />
       <CongratulationsModal
         isModalVisible={isOpenClaim}
         onClose={() => setIsOpenClaim(false)}
-        buttonText='Got it'
-        content={`You have claimed your item from ${creators.map(item => ' ' + (item.name || shortenAddress(item.address || '')))}!`}
-        extraButtonText='View My Items'
+        buttonText="Got it"
+        content={`You have claimed your item from ${creators.map(
+          item => ' ' + (item.name || shortenAddress(item.address || '')),
+        )}!`}
+        extraButtonText="View My Items"
         onClickExtraButton={() => history.push('/artworks')}
       />
     </div>

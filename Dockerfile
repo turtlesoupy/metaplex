@@ -5,6 +5,16 @@ FROM node:14.17.3-alpine as build
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat git
+RUN apk add --no-cache python3 py3-pip
+RUN apk add --no-cache make
+RUN apk add --no-cache gcc
+RUN apk add --no-cache g++
+RUN apk add --no-cache \
+    build-base \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev
 
 # Set the working directory
 WORKDIR /app
@@ -13,11 +23,13 @@ WORKDIR /app
 COPY ./js /app
 
 # Install all the dependencies
-RUN yarn install --frozen-lockfile
+RUN yarn install
 RUN yarn bootstrap
 
 # HERE ADD YOUR STORE WALLET ADDRESS
-ENV REACT_APP_STORE_OWNER_ADDRESS_ADDRESS=""
+ENV REACT_APP_STORE_OWNER_ADDRESS_ADDRESS="kickNLAj7N8kfEtXLuhpYJLGwZjJahuz7nr9tjKgn8e"
+ENV REACT_APP_BIG_STORE="FALSE"
+ENV REACT_APP_STORE_ADDRESS=""
 
 # Generate the build of the application
 RUN yarn build
@@ -39,6 +51,9 @@ COPY --from=build /app/packages/web/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/packages/web/.next ./.next
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages/web/package.json ./package.json
+
+RUN mkdir -p .cache/yarn
+RUN chown nextjs .cache/yarn
 
 USER nextjs
 

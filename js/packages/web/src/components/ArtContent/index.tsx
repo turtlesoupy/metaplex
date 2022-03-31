@@ -82,6 +82,7 @@ const VideoArtContent = ({
   uri?: string;
   animationURL?: string;
   active?: boolean;
+  allowMeshRender?: boolean;
 }) => {
   const [playerApi, setPlayerApi] = useState<StreamPlayerApi>();
 
